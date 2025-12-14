@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --success: #38a169;
+            --error: #e53e3e;
+            --warning: #d69e2e;
+            --gray-100: #f7fafc;
+            --gray-200: #edf2f7;
+            --gray-300: #e2e8f0;
+            --gray-400: #cbd5e0;
+            --gray-500: #a0aec0;
+            --gray-600: #718096;
+            --gray-700: #4a5568;
+            --gray-800: #2d3748;
+            --gray-900: #1a202c;
+            --shadow: 0 10px 40px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Emoji', 'Segoe UI Symbol', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--gray-800);
+            line-height: 1.5;
+        }
+        
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+        }
+        
+        .screen {
+            display: none;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 48px 40px;
+            animation: slideIn 0.4s ease-out;
+            transform-origin: center;
+        }
+        
+        .screen.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+        
+        .screen.exiting {
+            animation: fadeOutDown 0.3s ease-in;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 24px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        .screen-5 .logo {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-weight: 700;
+        }
+        
+        .screen-3 .logo {
+            font-family: monospace;
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+        
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 8px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        
+        .subtitle {
+            font-size: 15px;
+            color: var(--gray-600);
+            text-align: center;
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--gray-700);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 10px;
+            font-size: 16px;
+            transition: var(--transition);
+            background: white;
+            color: var(--gray-800);
+        }
+        
+        .input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .input:disabled {
+            background: var(--gray-100);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .input-error {
+            border-color: var(--error) !important;
+        }
+        
+        .input-success {
+            border-color: var(--success) !important;
+        }
+        
+        .button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .button-secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--gray-300);
+        }
+        
+        .button-secondary:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: var(--gray-100);
+        }
+        
+        .button-loading .button-text {
+            visibility: hidden;
+        }
+        
+        .button-loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        .code-container {
+            margin: 36px 0;
+        }
+        
+        .code-inputs {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .code-input {
+            width: 56px;
+            height: 68px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            background: white;
+            color: var(--gray-800);
+            transition: var(--transition);
+            caret-color: transparent;
+        }
+        
+        .code-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .code-input.filled {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+        
+        .code-input.error {
+            border-color: var(--error);
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .code-input.success {
+            border-color: var(--success);
+        }
+        
+        .timer {
+            text-align: center;
+            margin: 24px 0;
+            color: var(--gray-600);
+            font-size: 14px;
+        }
+        
+        .timer-expired {
+            color: var(--error);
+            font-weight: 500;
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, rgba(229, 62, 62, 0.1) 0%, rgba(229, 62, 62, 0.05) 100%);
+            border: 1px solid rgba(229, 62, 62, 0.2);
+            color: var(--error);
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .error-message::before {
+            content: "⚠";
+            font-size: 16px;
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, rgba(56, 161, 105, 0.1) 0%, rgba(56, 161, 105, 0.05) 100%);
+            border: 1px solid rgba(56, 161, 105, 0.2);
+            color: var(--success);
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .success-message::before {
+            content: "✓";
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-200);
+            color: var(--gray-600);
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .hint {
+            background: var(--gray-100);
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 28px;
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+        
+        .hint-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .hint-title::before {
+            content: "💡";
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: -60px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .lang-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .lang-btn.active {
+            background: white;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .screen-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 0 20px;
+        }
+        
+        .nav-arrow {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: all;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: none;
+            color: var(--gray-700);
+            font-size: 20px;
+        }
+        
+        .nav-arrow:hover {
+            transform: scale(1.1);
+            color: var(--primary);
+        }
+        
+        .nav-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .screen-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-300);
+            transition: var(--transition);
+        }
+        
+        .indicator-dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeOutDown {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .screen {
+                padding: 36px 24px;
+            }
+            
+            .code-input {
+                width: 48px;
+                height: 60px;
+                font-size: 24px;
+            }
+            
+            .nav-arrow {
+                width: 36px;
+                height: 36px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .code-input {
+                width: 42px;
+                height: 54px;
+                font-size: 22px;
+            }
+            
+            .code-inputs {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Навигация -->
+        <div class="language-switcher" id="languageSwitcher">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="it">IT</button>
+            <button class="lang-btn" data-lang="ru">RU</button>
+        </div>
+        
+        <div class="screen-nav">
+            <button class="nav-arrow" id="prevScreen" disabled>←</button>
+            <button class="nav-arrow" id="nextScreen">→</button>
+        </div>
+        
+        <!-- Screen 1: Company 2FA -->
+        <div id="screen1" class="screen active">
+            <div class="screen-indicator">
+                <div class="indicator-dot active"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+            </div>
+            
+            <div class="logo">Company</div>
+            <div class="title">Two-Factor Authentication</div>
+            <div class="subtitle">Enter the 6-digit code from your Google Authenticator app</div>
+            
+            <div class="code-container">
+                <div class="code-inputs">
+                    <input type="text" maxlength="1" class="code-input" data-index="0" autocomplete="one-time-code">
+                    <input type="text" maxlength="1" class="code-input" data-index="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="2">
+                    <input type="text" maxlength="1" class="code-input" data-index="3">
+                    <input type="text" maxlength="1" class="code-input" data-index="4">
+                    <input type="text" maxlength="1" class="code-input" data-index="5">
+                </div>
+            </div>
+            
+            <div id="error1" class="error-message" style="display: none;"></div>
+            <div id="success1" class="success-message" style="display: none;"></div>
+            
+            <button class="button" id="verifyBtn1">
+                <span class="button-text">Continue</span>
+            </button>
+            
+            <div class="timer" id="timer1">
+                <span id="timerText1">Resend code in 30s</span>
+            </div>
+            
+            <button class="button button-secondary" id="resendBtn1" disabled>
+                <span class="button-text">Resend Code</span>
+            </button>
+            
+            <div class="hint">
+                <div class="hint-title">Quick Test Codes</div>
+                <p>• <strong>111111</strong> → Screen 2 (Italian)</p>
+                <p>• <strong>222222</strong> → Screen 3 (Login)</p>
+                <p>• <strong>313111</strong> → Screen 6 (Prefilled)</p>
+                <p>• <strong>000000</strong> → Error simulation</p>
+            </div>
+            
+            <div class="footer">
+                <a href="#" id="skip2FA">Skip 2FA (Demo)</a>
+            </div>
+        </div>
+
+        <!-- Screen 2: Italian Version -->
+        <div id="screen2" class="screen">
+            <div class="screen-indicator">
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot active"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+            </div>
+            
+            <div class="logo">NO ESCIO AUTOMICCIO</div>
+            <div class="title">FINITIVA DI FUTURA DEI CORSI</div>
+            <div class="subtitle">ATTORNELLO JOB • Autenticazione a due fattori</div>
+            
+            <div class="code-container">
+                <div class="code-inputs">
+                    <input type="text" maxlength="1" class="code-input" data-index="0">
+                    <input type="text" maxlength="1" class="code-input" data-index="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="2">
+                    <input type="text" maxlength="1" class="code-input" data-index="3">
+                    <input type="text" maxlength="1" class="code-input" data-index="4">
+                    <input type="text" maxlength="1" class="code-input" data-index="5">
+                </div>
+            </div>
+            
+            <div id="error2" class="error-message" style="display: none;"></div>
+            
+            <button class="button" id="verifyBtn2">
+                <span class="button-text">Verifica</span>
+            </button>
+            
+            <div class="nav-buttons">
+                <button class="button button-secondary" onclick="switchScreen(1)">
+                    ← Indietro
+                </button>
+                <button class="button" onclick="switchScreen(3)">
+                    Avanti →
+                </button>
+            </div>
+            
+            <div class="hint">
+                <div class="hint-title">Test Code</div>
+                <p>Enter <strong>123456</strong> for success or any other code for error</p>
+            </div>
+        </div>
+
+        <!-- Screen 3: 1.2.3.5 Login -->
+        <div id="screen3" class="screen">
+            <div class="screen-indicator">
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot active"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+            </div>
+            
+            <div class="logo">1.2.3.5</div>
+            <div class="title">Sien in to your account to continue</div>
+            <div class="subtitle">Access your secure dashboard with your credentials</div>
+            
+            <div class="form-group">
+                <label class="label">Email Address</label>
+                <input type="email" id="email3" class="input" placeholder="user@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label class="label">Password</label>
+                <input type="password" id="password3" class="input" placeholder="Enter your password">
+            </div>
+            
+            <div id="error3" class="error-message" style="display: none;"></div>
+            
+            <button class="button" id="loginBtn3">
+                <span class="button-text">Sign In</span>
+            </button>
+            
+            <div class="nav-buttons">
+                <button class="button button-secondary" onclick="switchScreen(2)">
+                    ← Back
+                </button>
+                <button class="button" onclick="switchScreen(4)">
+                    Skip Login →
+                </button>
+            </div>
+            
+            <div class="hint">
+                <div class="hint-title">Demo Credentials</div>
+                <p><strong>Success:</strong> success@email.com / password</p>
+                <p><strong>Error:</strong> error@example.com / anything</p>
+            </div>
+        </div>
+
+        <!-- Screen 4: Comparty Success -->
+        <div id="screen4" class="screen">
+            <div class="screen-indicator">
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot active"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+            </div>
+            
+            <div class="logo">Comparty</div>
+            <div class="title">Sign in to your account to continue</div>
+            <div class="subtitle">Welcome back! Please enter your credentials</div>
+            
+            <div class="form-group">
+                <label class="label">Work Email</label>
+                <input type="email" id="email4" class="input" placeholder="admin@comparty.com">
+            </div>
+            
+            <div class="form-group">
+                <label class="label">Password</label>
+                <input type="password" id="password4" class="input" placeholder="••••••••">
+            </div>
+            
+            <div id="success4" class="success-message" style="display: none;">
+                Login successful! Redirecting...
+            </div>
+            
+            <div id="error4" class="error-message" style="display: none;"></div>
+            
+            <button class="button" id="loginBtn4">
+                <span class="button-text">Access Account</span>
+            </button>
+            
+            <div class="nav-buttons">
+                <button class="button button-secondary" onclick="switchScreen(3)">
+                    ← Previous
+                </button>
+                <button class="button" onclick="switchScreen(5)">
+                    Next →
+                </button>
+            </div>
+            
+            <div class="hint">
+                <div class="hint-title">Success Demo</div>
+                <p>This screen simulates successful login. Use any email with password "password"</p>
+            </div>
+        </div>
+
+        <!-- Screen 5: O'Connor Script -->
+        <div id="screen5" class="screen">
+            <div class="screen-indicator">
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot active"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+            </div>
+            
+            <div class="logo">O'Connor</div>
+            <div class="title">Two-Factor Authentication</div>
+            <div class="subtitle">Enter the Script code from the Script Authenticator app</div>
+            
+            <div class="code-container">
+                <div class="code-inputs">
+                    <input type="text" maxlength="1" class="code-input" data-index="0">
+                    <input type="text" maxlength="1" class="code-input" data-index="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="2">
+                    <input type="text" maxlength="1" class="code-input" data-index="3">
+                    <input type="text" maxlength="1" class="code-input" data-index="4">
+                    <input type="text" maxlength="1" class="code-input" data-index="5">
+                </div>
+            </div>
+            
+            <div id="error5" class="error-message" style="display: none;"></div>
+            
+            <button class="button" id="verifyBtn5">
+                <span class="button-text">Authenticate</span>
+            </button>
+            
+            <div class="nav-buttons">
+                <button class="button button-secondary" onclick="switchScreen(4)">
+                    ← Back
+                </button>
+                <button class="button" onclick="switchScreen(6)">
+                    Next →
+                </button>
+            </div>
+            
+            <div class="hint">
+                <div class="hint-title">Script Code Hint</div>
+                <p>Enter <strong>S C R I P T</strong> (736478 in numbers) for success</p>
+                <p>Or any 6-digit code starting with 7</p>
+            </div>
+        </div>
+
+        <!-- Screen 6: Prefilled Code -->
+        <div id="screen6" class="screen">
+            <div class="screen-indicator">
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot active"></div>
+                <div class="indicator-dot"></div>
+            </div>
+            
+            <div class="logo">Company</div>
+            <div class="title">Two-Factor Authentication</div>
+            <div class="subtitle">Enter the 6-digit code from the Google Authenticator app</div>
+            
+            <div class="code-container">
+                <div class="code-inputs">
+                    <input type="text" maxlength="1" class="code-input" data-index="0" value="3">
+                    <input type="text" maxlength="1" class="code-input" data-index="1" value="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="2" value="3">
+                    <input type="text" maxlength="1" class="code-input" data-index="3" value="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="4" value="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="5">
+                </div>
+            </div>
+            
+            <div id="error6" class="error-message" style="display: none;"></div>
+            
+            <button class="button" id="verifyBtn6">
+                <span class="button-text">Continue</span>
+            </button>
+            
+            <div class="nav-buttons">
+                <button class="button button-secondary" onclick="switchScreen(5)">
+                    ← Back
+                </button>
+                <button class="button" onclick="switchScreen(7)">
+                    Next →
+                </button>
+            </div>
+            
+            <div class="hint">
+                <div class="hint-title">Auto-filled Code</div>
+                <p>Complete with <strong>1</strong> for success (313111)</p>
+                <p>Or try other last digit for error simulation</p>
+            </div>
+        </div>
+
+        <!-- Screen 7: Main Login -->
+        <div id="screen7" class="screen">
+            <div class="screen-indicator">
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot"></div>
+                <div class="indicator-dot active"></div>
+            </div>
+            
+            <div class="logo">Company</div>
+            <div class="title">Sign in to your account to continue</div>
+            <div class="subtitle">Secure access to your workspace and tools</div>
+            
+            <div class="form-group">
+                <label class="label">Email</label>
+                <input type="email" id="email7" class="input" placeholder="info@mail.com" value="user@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label class="label">Password</label>
+                <input type="password" id="password7" class="input" placeholder="Enter your password" value="password">
+            </div>
+            
+            <div id="error7" class="error-message" style="display: none;"></div>
+            
+            <button class="button" id="loginBtn7">
+                <span class="button-text">Leg in</span>
+            </button>
+            
+            <div class="nav-buttons">
+                <button class="button button-secondary" onclick="switchScreen(6)">
+                    ← Back
+                </button>
+                <button class="button button-secondary" onclick="switchScreen(1)">
+                    To 2FA →
+                </button>
+            </div>
+            
+            <div class="footer">
+                <a href="#" onclick="resetAll()">Reset Demo</a> • 
+                <a href="#" onclick="showAllScreens()">View All Screens</a>
+            </div>
+            
+            <div class="hint">
+                <div class="hint-title">Navigation Tips</div>
+                <p>Use arrow buttons or keyboard arrows to navigate</p>
+                <p>Press Enter to submit forms</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AuthSystem {
+            constructor() {
+                this.currentScreen = 1;
+                this.totalScreens = 7;
+                this.timers = {};
+                this.isLoading = false;
+                this.language = 'en';
+                this.translations = {
+                    en: {
+                        continue: 'Continue',
+                        verify: 'Verify',
+                        authenticating: 'Authenticating...',
+                        errorInvalidCode: 'Invalid verification code',
+                        errorServer: 'Server error. Please try again.',
+                        errorNetwork: 'Network error. Check your connection.',
+                        errorTooManyAttempts: 'Too many attempts. Please wait.',
+                        successAuth: 'Authentication successful!',
+                        timerResend: 'Resend code in {seconds}s',
+                        timerExpired: 'Code expired',
+                        loading: 'Loading...'
+                    },
+                    it: {
+                        continue: 'Continua',
+                        verify: 'Verifica',
+                        authenticating: 'Autenticazione in corso...',
+                        errorInvalidCode: 'Codice di verifica non valido',
+                        errorServer: 'Errore del server. Riprova.',
+                        errorNetwork: 'Errore di rete. Controlla la connessione.',
+                        errorTooManyAttempts: 'Troppi tentativi. Attendi.',
+                        successAuth: 'Autenticazione riuscita!',
+                        timerResend: 'Rinvia codice tra {seconds}s',
+                        timerExpired: 'Codice scaduto',
+                        loading: 'Caricamento...'
+                    },
+                    ru: {
+                        continue: 'Продолжить',
+                        verify: 'Проверить',
+                        authenticating: 'Аутентификация...',
+                        errorInvalidCode: 'Неверный код подтверждения',
+                        errorServer: 'Ошибка сервера. Попробуйте снова.',
+                        errorNetwork: 'Ошибка сети. Проверьте соединение.',
+                        errorTooManyAttempts: 'Слишком много попыток. Подождите.',
+                        successAuth: 'Аутентификация успешна!',
+                        timerResend: 'Отправить код через {seconds}с',
+                        timerExpired: 'Код истек',
+                        loading: 'Загрузка...'
+                    }
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.initCodeInputs();
+                this.startTimer(1, 30);
+                this.updateNavigation();
+                this.setupKeyboardNavigation();
+            }
+            
+            setupEventListeners() {
+                // Language switcher
+                document.querySelectorAll('.lang-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.setLanguage(e.target.dataset.lang);
+                    });
+                });
+                
+                // Screen navigation
+                document.getElementById('prevScreen').addEventListener('click', () => this.prevScreen());
+                document.getElementById('nextScreen').addEventListener('click', () => this.nextScreen());
+                
+                // Skip 2FA
+                document.getElementById('skip2FA').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.switchScreen(7);
+                });
+                
+                // Verify buttons
+                for (let i = 1; i <= 6; i++) {
+                    const btn = document.getElementById(`verifyBtn${i}`);
+                    if (btn) {
+                        btn.addEventListener('click', () => this.verifyCode(i));
+                    }
+                }
+                
+                // Login buttons
+                for (let i = 3; i <= 7; i++) {
+                    const btn = document.getElementById(`loginBtn${i}`);
+                    if (btn) {
+                        btn.addEventListener('click', () => this.login(i));
+                    }
+                }
+                
+                // Resend button
+                document.getElementById('resendBtn1').addEventListener('click', () => this.resendCode(1));
+            }
+            
+            setLanguage(lang) {
+                this.language = lang;
+                
+                // Update active button
+                document.querySelectorAll('.lang-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.lang === lang);
+                });
+                
+                // Update texts (simplified version)
+                document.querySelectorAll('[data-translate]').forEach(el => {
+                    const key = el.dataset.translate;
+                    if (this.translations[lang][key]) {
+                        el.textContent = this.translations[lang][key];
+                    }
+                });
+            }
+            
+            switchScreen(screenNumber) {
+                if (this.isLoading || screenNumber < 1 || screenNumber > this.totalScreens) return;
+                
+                // Exit animation for current screen
+                const currentScreen = document.querySelector('.screen.active');
+                if (currentScreen) {
+                    currentScreen.classList.add('exiting');
+                    setTimeout(() => {
+                        currentScreen.classList.remove('active', 'exiting');
+                    }, 300);
+                }
+                
+                // Enter animation for new screen
+                setTimeout(() => {
+                    this.currentScreen = screenNumber;
+                    const newScreen = document.getElementById(`screen${screenNumber}`);
+                    if (newScreen) {
+                        newScreen.classList.add('active');
+                        
+                        // Update indicators
+                        this.updateIndicators();
+                        
+                        // Update navigation buttons
+                        this.updateNavigation();
+                        
+                        // Auto-focus first input
+                        setTimeout(() => {
+                            const firstInput = newScreen.querySelector('input');
+                            if (firstInput) {
+                                firstInput.focus();
+                                if (firstInput.type === 'text' && firstInput.value) {
+                                    firstInput.select();
+                                }
+                            }
+                        }, 100);
+                        
+                        // Special initialization for screen 6
+                        if (screenNumber === 6) {
+                            setTimeout(() => {
+                                const lastInput = newScreen.querySelector('.code-input[data-index="5"]');
+                                if (lastInput) lastInput.focus();
+                            }, 150);
+                        }
+                    }
+                }, 300);
+            }
+            
+            updateIndicators() {
+                document.querySelectorAll('.indicator-dot').forEach((dot, index) => {
+                    dot.classList.toggle('active', index === this.currentScreen - 1);
+                });
+            }
+            
+            updateNavigation() {
+                const prevBtn = document.getElementById('prevScreen');
+                const nextBtn = document.getElementById('nextScreen');
+                
+                prevBtn.disabled = this.currentScreen === 1;
+                nextBtn.disabled = this.currentScreen === this.totalScreens;
+            }
+            
+            prevScreen() {
+                if (this.currentScreen > 1) {
+                    this.switchScreen(this.currentScreen - 1);
+                }
+            }
+            
+            nextScreen() {
+                if (this.currentScreen < this.totalScreens) {
+                    this.switchScreen(this.currentScreen + 1);
+                }
+            }
+            
+            initCodeInputs() {
+                document.querySelectorAll('.code-input').forEach(input => {
+                    input.addEventListener('input', (e) => this.handleCodeInput(e));
+                    input.addEventListener('keydown', (e) => this.handleCodeKeydown(e));
+                    input.addEventListener('paste', (e) => this.handleCodePaste(e));
+                    input.addEventListener('focus', (e) => {
+                        e.target.select();
+                        e.target.classList.add('filled');
+                    });
+                    input.addEventListener('blur', (e) => {
+                        if (!e.target.value) {
+                            e.target.classList.remove('filled');
+                        }
+                    });
+                });
+            }
+            
+            handleCodeInput(event) {
+                const input = event.target;
+                const value = input.value;
+                const index = parseInt(input.dataset.index);
+                const screenId = this.getCurrentScreenId();
+                
+                // Allow only digits
+                if (!/^\d*$/.test(value)) {
+                    input.value = '';
+                    return;
+                }
+                
+                // Update visual state
+                if (value) {
+                    input.classList.add('filled');
+                } else {
+                    input.classList.remove('filled');
+                }
+                
+                // Clear error when typing
+                const errorEl = document.getElementById(`error${screenId}`);
+                if (errorEl && errorEl.style.display !== 'none') {
+                    this.hideError(screenId);
+                }
+                
+                // Auto-advance to next input
+                if (value && index < 5) {
+                    const nextInput = document.querySelector(`#screen${screenId} .code-input[data-index="${index + 1}"]`);
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                }
+                
+                // Auto-verify when all fields are filled
+                if (index === 5 && value) {
+                    const allFilled = Array.from(document.querySelectorAll(`#screen${screenId} .code-input`))
+                        .every(inp => inp.value.length === 1);
+                    
+                    if (allFilled) {
+                        setTimeout(() => this.verifyCode(screenId), 200);
+                    }
+                }
+            }
+            
+            handleCodeKeydown(event) {
+                const input = event.target;
+                const index = parseInt(input.dataset.index);
+                const screenId = this.getCurrentScreenId();
+                
+                if (event.key === 'Backspace') {
+                    if (!input.value && index > 0) {
+                        event.preventDefault();
+                        const prevInput = document.querySelector(`#screen${screenId} .code-input[data-index="${index - 1}"]`);
+                        if (prevInput) {
+                            prevInput.focus();
+                            prevInput.value = '';
+                            prevInput.classList.remove('filled');
+                        }
+                    }
+                } else if (event.key === 'ArrowLeft' && index > 0) {
+                    event.preventDefault();
+                    const prevInput = document.querySelector(`#screen${screenId} .code-input[data-index="${index - 1}"]`);
+                    if (prevInput) prevInput.focus();
+                } else if (event.key === 'ArrowRight' && index < 5) {
+                    event.preventDefault();
+                    const nextInput = document.querySelector(`#screen${screenId} .code-input[data-index="${index + 1}"]`);
+                    if (nextInput) nextInput.focus();
+                } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    this.verifyCode(screenId);
+                }
+            }
+            
+            handleCodePaste(event) {
+                event.preventDefault();
+                const pastedData = event.clipboardData.getData('text').slice(0, 6);
+                if (/^\d+$/.test(pastedData)) {
+                    const screenId = this.getCurrentScreenId();
+                    const digits = pastedData.split('');
+                    
+                    digits.forEach((digit, i) => {
+                        const input = document.querySelector(`#screen${screenId} .code-input[data-index="${i}"]`);
+                        if (input) {
+                            input.value = digit;
+                            input.classList.add('filled');
+                        }
+                    });
+                    
+                    // Focus last filled input
+                    const lastIndex = Math.min(digits.length, 5);
+                    const lastInput = document.querySelector(`#screen${screenId} .code-input[data-index="${lastIndex}"]`);
+                    if (lastInput) lastInput.focus();
+                    
+                    // Auto-verify if all 6 digits
+                    if (digits.length === 6) {
+                        setTimeout(() => this.verifyCode(screenId), 100);
+                    }
+                }
+            }
+            
+            getCurrentScreenId() {
+                const activeScreen = document.querySelector('.screen.active');
+                return parseInt(activeScreen.id.replace('screen', ''));
+            }
+            
+            async verifyCode(screenId) {
+                if (this.isLoading) return;
+                
+                const codeInputs = document.querySelectorAll(`#screen${screenId} .code-input`);
+                const code = Array.from(codeInputs).map(input => input.value).join('');
+                
+                // Validation
+                if (code.length !== 6) {
+                    this.showError(screenId, 'Please enter a complete 6-digit code');
+                    this.shakeInputs(screenId);
+                    return;
+                }
+                
+                this.setLoading(screenId, true);
+                
+                // Simulate API call
+                await this.delay(800 + Math.random() * 400);
+                
+                this.setLoading(screenId, false);
+                
+                // Process based on screen and code
+                switch(screenId) {
+                    case 1:
+                        if (code === '111111') {
+                            this.showSuccess(1, 'Redirecting to Italian version...');
+                            setTimeout(() => this.switchScreen(2), 1000);
+                        } else if (code === '222222') {
+                            this.switchScreen(3);
+                        } else if (code === '313111') {
+                            this.switchScreen(6);
+                        } else if (code === '000000') {
+                            this.showError(1, 'Invalid verification code. Try 111111, 222222, or 313111');
+                            this.shakeInputs(1);
+                        } else {
+                            this.showError(1, `Code ${code} is not recognized. Try test codes above.`);
+                            this.shakeInputs(1);
+                        }
+                        break;
+                        
+                    case 2:
+                        if (code === '123456') {
+                            this.showSuccess(2, 'Autenticazione riuscita!');
+                            setTimeout(() => this.switchScreen(3), 1200);
+                        } else {
+                            this.showError(2, 'Codice non valido. Prova 123456');
+                            this.shakeInputs(2);
+                        }
+                        break;
+                        
+                    case 5:
+                        if (code === '736478') { // SCRIPT in numbers
+                            this.showSuccess(5, 'Script authentication successful!');
+                            setTimeout(() => this.switchScreen(6), 1200);
+                        } else if (code.startsWith('7')) {
+                            this.showError(5, 'Close! Try 736478 (S=7, C=3, R=6, I=4, P=7, T=8)');
+                        } else {
+                            this.showError(5, 'Invalid script code. Hint: S C R I P T');
+                            this.shakeInputs(5);
+                        }
+                        break;
+                        
+                    case 6:
+                        if (code === '313111') {
+                            this.showSuccess(6, 'Authentication successful!');
+                            setTimeout(() => this.switchScreen(7), 1200);
+                        } else {
+                            this.showError(6, 'Invalid code. Complete with 1 (313111)');
+                            const lastInput = document.querySelector(`#screen6 .code-input[data-index="5"]`);
+                            if (lastInput) {
+                                lastInput.focus();
+                                lastInput.select();
+                            }
+                        }
+                        break;
+                        
+                    default:
+                        if (code === '123456') {
+                            this.showSuccess(screenId, 'Verification successful!');
+                            setTimeout(() => this.switchScreen(1), 1200);
+                        } else {
+                            this.showError(screenId, 'Invalid code. Try 123456');
+                            this.shakeInputs(screenId);
+                        }
+                }
+            }
+            
+            async login(screenId) {
+                if (this.isLoading) return;
+                
+                const email = document.getElementById(`email${screenId}`)?.value || '';
+                const password = document.getElementById(`password${screenId}`)?.value || '';
+                
+                // Basic validation
+                if (!email.includes('@') || !email.includes('.')) {
+                    this.showError(screenId, 'Please enter a valid email address');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    this.showError(screenId, 'Password must be at least 6 characters');
+                    return;
+                }
+                
+                this.setLoading(screenId, true);
+                
+                // Simulate API call
+                await this.delay(1000 + Math.random() * 500);
+                
+                this.setLoading(screenId, false);
+                
+                // Process login
+                switch(screenId) {
+                    case 3:
+                        if (email === 'success@email.com' && password === 'password') {
+                            this.showSuccess(3, 'Login successful! Redirecting...');
+                            setTimeout(() => this.switchScreen(4), 1200);
+                        } else if (email === 'error@example.com') {
+                            this.showError(3, 'Server error (500). Please try again later.');
+                        } else {
+                            this.showError(3, 'Invalid email or password. Try success@email.com / password');
+                        }
+                        break;
+                        
+                    case 4:
+                        if (password === 'password') {
+                            document.getElementById(`success${screenId}`).style.display = 'flex';
+                            setTimeout(() => {
+                                this.switchScreen(5);
+                                document.getElementById(`success${screenId}`).style.display = 'none';
+                            }, 1500);
+                        } else {
+                            this.showError(4, 'Access denied. Try password "password"');
+                        }
+                        break;
+                        
+                    case 7:
+                        if (password === 'password') {
+                            this.showSuccess(7, 'Login successful! Enabling 2FA...');
+                            setTimeout(() => this.switchScreen(1), 1500);
+                        } else {
+                            this.showError(7, 'Login failed. Try password "password"');
+                        }
+                        break;
+                }
+            }
+            
+            startTimer(screenId, seconds) {
+                const timerEl = document.getElementById(`timerText${screenId}`);
+                const resendBtn = document.getElementById(`resendBtn${screenId}`);
+                
+                if (!timerEl || !resendBtn) return;
+                
+                let timeLeft = seconds;
+                this.timers[screenId] = { timeLeft, interval: null };
+                
+                const updateTimer = () => {
+                    timeLeft--;
+                    timerEl.textContent = this.translations[this.language].timerResend.replace('{seconds}', timeLeft);
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(this.timers[screenId].interval);
+                        timerEl.textContent = this.translations[this.language].timerExpired;
+                        timerEl.classList.add('timer-expired');
+                        resendBtn.disabled = false;
+                    }
+                };
+                
+                updateTimer();
+                this.timers[screenId].interval = setInterval(updateTimer, 1000);
+            }
+            
+            resendCode(screenId) {
+                const resendBtn = document.getElementById(`resendBtn${screenId}`);
+                const timerText = document.getElementById(`timerText${screenId}`);
+                
+                if (resendBtn.disabled) return;
+                
+                // Reset timer
+                if (this.timers[screenId]) {
+                    clearInterval(this.timers[screenId].interval);
+                }
+                
+                // Show loading on button
+                resendBtn.classList.add('button-loading');
+                resendBtn.disabled = true;
+                
+                // Simulate API call
+                setTimeout(() => {
+                    resendBtn.classList.remove('button-loading');
+                    timerText.classList.remove('timer-expired');
+                    
+                    // Start new timer
+                    this.startTimer(screenId, 30);
+                    
+                    // Clear inputs
+                    document.querySelectorAll(`#screen${screenId} .code-input`).forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled', 'error');
+                    });
+                    
+                    // Focus first input
+                    const firstInput = document.querySelector(`#screen${screenId} .code-input[data-index="0"]`);
+                    if (firstInput) firstInput.focus();
+                    
+                    // Show success message
+                    this.showSuccess(screenId, 'New verification code sent!');
+                }, 800);
+            }
+            
+            showError(screenId, message) {
+                const errorEl = document.getElementById(`error${screenId}`);
+                if (errorEl) {
+                    errorEl.textContent = message;
+                    errorEl.style.display = 'flex';
+                    
+                    // Auto-hide after 5 seconds
+                    setTimeout(() => {
+                        this.hideError(screenId);
+                    }, 5000);
+                }
+            }
+            
+            hideError(screenId) {
+                const errorEl = document.getElementById(`error${screenId}`);
+                if (errorEl) {
+                    errorEl.style.display = 'none';
+                }
+            }
+            
+            showSuccess(screenId, message) {
+                const successEl = document.getElementById(`success${screenId}`);
+                if (successEl) {
+                    successEl.textContent = message;
+                    successEl.style.display = 'flex';
+                    
+                    // Auto-hide after 3 seconds
+                    setTimeout(() => {
+                        successEl.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            shakeInputs(screenId) {
+                const inputs = document.querySelectorAll(`#screen${screenId} .code-input`);
+                inputs.forEach(input => {
+                    input.classList.add('error');
+                    setTimeout(() => input.classList.remove('error'), 500);
+                });
+            }
+            
+            setLoading(screenId, isLoading) {
+                this.isLoading = isLoading;
+                
+                // Update button state
+                const button = document.querySelector(`#screen${screenId} .button`);
+                if (button) {
+                    if (isLoading) {
+                        button.classList.add('button-loading');
+                        button.disabled = true;
+                    } else {
+                        button.classList.remove('button-loading');
+                        button.disabled = false;
+                    }
+                }
+                
+                // Disable inputs during loading
+                document.querySelectorAll(`#screen${screenId} input`).forEach(input => {
+                    input.disabled = isLoading;
+                });
+            }
+            
+            setupKeyboardNavigation() {
+                document.addEventListener('keydown', (e) => {
+                    // Don't interfere with form inputs
+                    if (e.target.tagName === 'INPUT') {
+                        if (e.key === 'Escape') {
+                            e.target.blur();
+                        }
+                        return;
+                    }
+                    
+                    // Global keyboard shortcuts
+                    switch(e.key) {
+                        case 'ArrowLeft':
+                            this.prevScreen();
+                            break;
+                        case 'ArrowRight':
+                            this.nextScreen();
+                            break;
+                        case '1':
+                            this.switchScreen(1);
+                            break;
+                        case '2':
+                            this.switchScreen(2);
+                            break;
+                        case '3':
+                            this.switchScreen(3);
+                            break;
+                        case '4':
+                            this.switchScreen(4);
+                            break;
+                        case '5':
+                            this.switchScreen(5);
+                            break;
+                        case '6':
+                            this.switchScreen(6);
+                            break;
+                        case '7':
+                            this.switchScreen(7);
+                            break;
+                        case 'r':
+                        case 'R':
+                            if (e.ctrlKey) {
+                                this.resetAll();
+                            }
+                            break;
+                    }
+                });
+            }
+            
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            // Public methods for HTML onclick
+            showAllScreens() {
+                let current = 1;
+                const interval = setInterval(() => {
+                    this.switchScreen(current);
+                    current++;
+                    if (current > this.totalScreens) {
+                        clearInterval(interval);
+                        setTimeout(() => this.switchScreen(1), 1000);
+                    }
+                }, 800);
+            }
+            
+            resetAll() {
+                // Reset all forms
+                for (let i = 1; i <= this.totalScreens; i++) {
+                    // Clear inputs
+                    document.querySelectorAll(`#screen${i} input`).forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled', 'error', 'success');
+                        input.disabled = false;
+                    });
+                    
+                    // Clear messages
+                    const errorEl = document.getElementById(`error${i}`);
+                    if (errorEl) errorEl.style.display = 'none';
+                    
+                    const successEl = document.getElementById(`success${i}`);
+                    if (successEl) successEl.style.display = 'none';
+                    
+                    // Reset buttons
+                    const button = document.querySelector(`#screen${i} .button`);
+                    if (button) {
+                        button.classList.remove('button-loading');
+                        button.disabled = false;
+                    }
+                }
+                
+                // Set specific values for demo
+                document.getElementById('email7').value = 'user@example.com';
+                document.getElementById('password7').value = 'password';
+                
+                // Reset screen 6 prefilled values
+                document.querySelectorAll('#screen6 .code-input').forEach((input, idx) => {
+                    const values = ['3', '1', '3', '1', '1', ''];
+                    input.value = values[idx] || '';
+                    if (values[idx]) {
+                        input.classList.add('filled');
+                    }
+                });
+                
+                // Go to first screen
+                this.switchScreen(1);
+                
+                // Reset timer
+                if (this.timers[1]) {
+                    clearInterval(this.timers[1].interval);
+                }
+                this.startTimer(1, 30);
+                
+                this.showSuccess(1, 'Demo reset successfully!');
+            }
+        }
+        
+        // Initialize the application
+        const authSystem = new AuthSystem();
+        
+        // Global functions for HTML onclick
+        window.switchScreen = (num) => authSystem.switchScreen(num);
+        window.showAllScreens = () => authSystem.showAllScreens();
+        window.resetAll = () => authSystem.resetAll();
+        window.nextScreen = () => authSystem.nextScreen();
+        window.prevScreen = () => authSystem.prevScreen();
+    </script>
+</body>
+</html>
